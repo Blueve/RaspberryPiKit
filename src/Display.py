@@ -108,19 +108,19 @@ class Display():
 			},
 			# DEFAULT
 			1:{
-				Adafruit_CharLCDPlate.LEFT: (1, 0),
+				Adafruit_CharLCDPlate.LEFT  : (1, 0),
 				Adafruit_CharLCDPlate.UP    : (1, 2),
 				Adafruit_CharLCDPlate.DOWN  : (1, 3)
 			},
 			# PAGE UP
 			2:{
-				Adafruit_CharLCDPlate.LEFT: (1, 0),
+				Adafruit_CharLCDPlate.LEFT  : (1, 0),
 				Adafruit_CharLCDPlate.UP    : (1, 2),
 				Adafruit_CharLCDPlate.DOWN  : (1, 3)
 			},
 			# PAGE DOWN
 			3:{
-				Adafruit_CharLCDPlate.LEFT: (1, 0),
+				Adafruit_CharLCDPlate.LEFT  : (1, 0),
 				Adafruit_CharLCDPlate.UP    : (1, 2),
 				Adafruit_CharLCDPlate.DOWN  : (1, 3)
 			}
@@ -168,9 +168,23 @@ class Display():
 				Adafruit_CharLCDPlate.RIGHT : (6, 0),
 				Adafruit_CharLCDPlate.SELECT: (5, 1)
 			},
-			# DEFAULT
+			# SETTING LIST
 			1:{
-				Adafruit_CharLCDPlate.LEFT: (5, 0)
+				Adafruit_CharLCDPlate.LEFT  : (5, 0),
+				Adafruit_CharLCDPlate.UP    : (5, 2),
+				Adafruit_CharLCDPlate.DOWN  : (5, 3)
+			},
+			# SETTING LIST UP
+			2:{
+				Adafruit_CharLCDPlate.LEFT  : (5, 0),
+				Adafruit_CharLCDPlate.UP    : (5, 2),
+				Adafruit_CharLCDPlate.DOWN  : (5, 3)
+			},
+			# SETTING LIST DOWN
+			3:{
+				Adafruit_CharLCDPlate.LEFT  : (5, 0),
+				Adafruit_CharLCDPlate.UP    : (5, 2),
+				Adafruit_CharLCDPlate.DOWN  : (5, 3)
 			}
 		},
 		# MENU_6 EXIT
@@ -199,11 +213,19 @@ class Display():
 		# Init EventMethods
 		self.EventMethods = {
 			'EventMethods_01': self.EventMethods_SystemInfo,
+
 			'EventMethods_11': self.EventMethods_NetworkInfo,
 			'EventMethods_12': self.EventMethods_NetworkInfo_Up,
 			'EventMethods_13': self.EventMethods_NetworkInfo_Down,
+
 			'EventMethods_21': self.EventMethods_Temperature,
+
 			'EventMethods_31': self.EventMethods_DiskInfo,
+
+			'EventMethods_51': self.EventMethods_Setting,
+			'EventMethods_52': self.EventMethods_Setting_Up,
+			'EventMethods_53': self.EventMethods_Setting_Down,
+
 			'EventMethods_61': self.EventMethods_Exit_No,
 			'EventMethods_62': self.EventMethods_Exit_Yes,
 			'EventMethods_63': self.EventMethods_Exit
@@ -262,6 +284,7 @@ class Display():
 			except Exception, e:
 				if(self.debug):
 					self.lcd.message(str(e))
+					print str(e)
 				else:
 					self.lcd.message('ERROR!\nPlease try again')
 			
@@ -296,25 +319,25 @@ class Display():
 		self.AutoRefreshMethod = 'EventMethods_01'
 		self.message('CPU Used: ' + str(SysInfo.getCpuInfo()['used']) + '%\nMEM FREE: ' + str(SysInfo.getMemInfo()['free']/1024) + 'MB')
 
-	def getNetworkInfo(self, networkInfo):
+	def showNetworkInfo(self, networkInfo):
 		if len(networkInfo) > 0:
-			self.message(SysInfo.getNetInfo()[self.NetworkPageId ]['name'] + ':\n' + SysInfo.getNetInfo()[self.NetworkPageId ]['ip'])
+			self.message(chr(2) + SysInfo.getNetInfo()[self.NetworkPageId ]['name'] + ':\n' + chr(3) + SysInfo.getNetInfo()[self.NetworkPageId ]['ip'])
 		else:
 			self.message('NONE')
 
 	def EventMethods_NetworkInfo(self):
 		self.NetworkPageId = 0
-		self.getNetworkInfo(SysInfo.getNetInfo())
+		self.showNetworkInfo(SysInfo.getNetInfo())
 
 	def EventMethods_NetworkInfo_Up(self):
 		networkInfo = SysInfo.getNetInfo()
 		self.NetworkPageId = (self.NetworkPageId + 1) % len(networkInfo)
-		self.getNetworkInfo(networkInfo)
+		self.showNetworkInfo(networkInfo)
 
 	def EventMethods_NetworkInfo_Down(self):
 		networkInfo = SysInfo.getNetInfo()
 		self.NetworkPageId = (self.NetworkPageId - 1) % len(networkInfo)
-		self.getNetworkInfo(networkInfo)
+		self.showNetworkInfo(networkInfo)
 
 	def EventMethods_Temperature(self):
 		self.AutoRefreshMethod = 'EventMethods_21'
@@ -328,6 +351,40 @@ class Display():
 		for i in range(0, 10 - blackGridNum):
 			line_2 = line_2 + chr(6)
 		self.message('Disk used: ' + str(SysInfo.getDiskInfo()['used']) + 'GB\n' + line_2 + ' ' + str(SysInfo.getDiskInfo()['use%']) + '%')
+
+	SETTING_NUM  = 3
+	SETTING_LIST = ('Backlight', 'Auto Refresh', 'Weather Report')
+	SETTING_CURSOR = (())
+	def showSettingList(self):
+		line_1 = chr(2) + self.SETTING_LIST[self.curSettingItem]
+		line_2 = chr(3) + self.SETTING_LIST[(self.curSettingItem + 1) % self.SETTING_NUM]
+		self.message(line_1 + '\n' + line_2)
+		if self.curSettingCursor == 0:
+			self.blink(1, 0)
+		else:
+			self.blink(1, 1)
+
+
+	def EventMethods_Setting(self):
+		self.curSettingItem = 0
+		self.curSettingCursor = 0
+		self.showSettingList()
+
+	def EventMethods_Setting_Up(self):
+		if self.curSettingCursor == 0:
+			self.curSettingCursor = 1
+			self.curSettingItem = (self.curSettingItem - 2) % self.SETTING_NUM
+		else:
+			self.curSettingCursor = 0
+		self.showSettingList()
+
+	def EventMethods_Setting_Down(self):
+		if self.curSettingCursor == 0:
+			self.curSettingCursor = 1
+		else:
+			self.curSettingCursor = 0
+			self.curSettingItem = (self.curSettingItem + 2) % self.SETTING_NUM
+		self.showSettingList()
 
 	def EventMethods_Exit_No(self):
 		self.message('Exit?\n(No/Yes)')
