@@ -5,7 +5,8 @@ import thread
 
 class Display():
 
-	CHAR_SET = [
+	CHAR_SET ={'default':
+			   [
 				[0b00000, # 0 <-
 				 0b00010,
 				 0b00110,
@@ -61,10 +62,75 @@ class Display():
 				 0b10101,
 				 0b01010,
 				 0b10101,
-				 0b01010]
-			   ]
-
-	AUTO_REFRESH_PERIOD = 5
+				 0b01010],
+				[0b10010, # 7 Light Gray Block
+				 0b01001,
+				 0b00100,
+				 0b10010,
+				 0b01001,
+				 0b00100,
+				 0b10010,
+				 0b01001]
+			   ],
+			   'TemperatureExtend':
+			   [
+				[0b11111, # 0 Black Block
+				 0b11111,
+				 0b11111,
+				 0b11111,
+				 0b11111,
+				 0b11111,
+				 0b11111,
+				 0b11111],
+				[0b11111, # 1 Dark Gray Block
+				 0b01101,
+				 0b10110,
+				 0b11011,
+				 0b01101,
+				 0b10110,
+				 0b11011,
+				 0b11111],
+				[0b11111, # 2 Gray Block
+				 0b01010,
+				 0b10101,
+				 0b01010,
+				 0b10101,
+				 0b01010,
+				 0b10101,
+				 0b11111],
+				[0b11111, # 3 Light Gray Block
+				 0b01001,
+				 0b00100,
+				 0b10010,
+				 0b01001,
+				 0b00100,
+				 0b10010,
+				 0b11111],
+				[0b00111, # 4 Left
+				 0b01001,
+				 0b10100,
+				 0b10010,
+				 0b11001,
+				 0b10100,
+				 0b01010,
+				 0b00111],
+				[0b11100, # 5 Right
+				 0b01110,
+				 0b10111,
+				 0b11011,
+				 0b01101,
+				 0b10111,
+				 0b11010,
+				 0b11100],
+				[0b00110, # 6 Degree
+				 0b01001,
+				 0b01001,
+				 0b00110,
+				 0b00000,
+				 0b00000,
+				 0b00000,
+				 0b00000]
+			    ]}
 
 	OPSET = (Adafruit_CharLCDPlate.LEFT,
 			 Adafruit_CharLCDPlate.RIGHT,
@@ -232,6 +298,7 @@ class Display():
 	
 	def __init__(self, curMenu = 0, debug = False):
 		# Init EventMethods
+		self.AUTO_REFRESH_PERIOD = 5
 		self.EventMethods = {
 			'EventMethods_01': self.EventMethods_SystemInfo,
 
@@ -258,7 +325,7 @@ class Display():
 		self.SETTING_NUM  = 3
 		self.SETTING_LIST = (
 			{'name':'Backlight', 'handle':self.EventMethods_Backlight },
-			{'name':'Auto Refresh', 'handle':self.EventMethods_Backlight },
+			{'name':'Auto Refresh', 'handle':self.EventMethods_AutoRefresh },
 			{'name':'Weather Report', 'handle':self.EventMethods_Backlight }
 		)
 		# Init LCD
@@ -272,8 +339,7 @@ class Display():
 		sleep(1)
 		self.lcd.backlight(Adafruit_CharLCDPlate.ON)
 		# Init Char Set
-		for i, item in enumerate(self.CHAR_SET):
-			self.lcd.createChar(i, item)
+		self.loadCharset()
 		# Set default screen
 		self.curMenu = curMenu
 		self.curPage = 0
@@ -281,6 +347,10 @@ class Display():
 		# Init AutoRefeashMethods
 		self.AutoRefreshMethod = None
 		thread.start_new_thread(self.autoRefresh, ())
+
+	def loadCharset(self, charset = 'default'):
+		for i, item in enumerate(self.CHAR_SET[charset]):
+			self.lcd.createChar(i, item)
 
 	def autoRefresh(self):
 		if(self.debug):
@@ -308,6 +378,7 @@ class Display():
 
 	def show(self):
 		if self.curPage == 0:
+			self.loadCharset()
 			self.message(self.MENU[self.curMenu])
 		else:
 			try:
@@ -346,10 +417,18 @@ class Display():
 		self.clear()
 		self.lcd.backlight(Adafruit_CharLCDPlate.OFF)
 
+	#------------FUNCTION--------------------------------------------------#
+
+	#==============================#
+	# --------SYSTEM INFO----------#
+	#==============================#
 	def EventMethods_SystemInfo(self):
 		self.AutoRefreshMethod = 'EventMethods_01'
 		self.message('CPU Used: ' + str(SysInfo.getCpuInfo()['used']) + '%\nMEM Free: ' + str(SysInfo.getMemInfo()['free']/1024) + 'MB')
-
+	
+	#==============================#
+	# ----------NETWORK------------#
+	#==============================#
 	def showNetworkInfo(self, networkInfo):
 		if len(networkInfo) > 0:
 			self.message(chr(2) + SysInfo.getNetInfo()[self.NetworkPageId ]['name'] + ':\n' + chr(3) + SysInfo.getNetInfo()[self.NetworkPageId ]['ip'])
@@ -370,10 +449,31 @@ class Display():
 		self.NetworkPageId = (self.NetworkPageId - 1) % len(networkInfo)
 		self.showNetworkInfo(networkInfo)
 
+	#==============================#
+	# --------TEMPERATURE----------#
+	#==============================#
 	def EventMethods_Temperature(self):
 		self.AutoRefreshMethod = 'EventMethods_21'
-		self.message('CPU: ' + str(SysInfo.getCpuTemperature()) + chr(4) + 'C\nGPU: ' + str(SysInfo.getGpuTemperature()) + chr(4) + 'C')
+		cpuTemperature = SysInfo.getCpuTemperature()
+		cursor = int(cpuTemperature * 10)
+		if cursor <= 350:
+			cursor = 2
+		elif cursor >= 500:
+			cursor = 13
+		else:
+			cursor = int((cursor - 350) * 12 / 150) + 2
+		# Use private charset
+		self.loadCharset('TemperatureExtend')
+		line_2 = 'L-' + chr(4) + chr(3) + chr(3) + chr(3) + chr(2) + chr(2) + chr(2) + chr(2) + chr(1) + chr(1) + chr(1) + chr(5) + '-H'
+		self.message('CPU: ' + str(cpuTemperature) + chr(6) + 'C\n' + line_2)
+		self.blink(cursor, 1)
+		self.AutoRefreshMethod = 'EventMethods_21'
+		if(self.debug):
+			print 'Temperature bar: ' + str(cursor)
 
+	#==============================#
+	# ---------DISK INFO-----------#
+	#==============================#
 	def EventMethods_DiskInfo(self):
 		blackGridNum = (10 * SysInfo.getDiskInfo()['use%'] + 50) / 100
 		line_2 = ''
@@ -416,13 +516,26 @@ class Display():
 			self.curSettingItem = (self.curSettingItem + 2) % self.SETTING_NUM
 		self.showSettingList()
 
+	def EventMethods_Setting_One(self):
+		self.SETTING_LIST[(self.curSettingItem + self.curSettingCursor) % self.SETTING_NUM]['handle'](0)
+
+	def EventMethods_Setting_Two(self):
+		self.SETTING_LIST[(self.curSettingItem + self.curSettingCursor) % self.SETTING_NUM]['handle'](1)
+
+	def EventMethods_Setting_Excute_One(self):
+		self.SETTING_LIST[self.curSettingItem]['handle'](0, True)
+		self.message('Setting saved!')
+
+	def EventMethods_Setting_Excute_Two(self):
+		self.SETTING_LIST[self.curSettingItem]['handle'](1, True)
+		self.message('Setting saved!')
+
 	def EventMethods_Backlight(self, choice, excute = False):
 		if excute:
 			if choice == 0:
 				self.lcd.backlight(Adafruit_CharLCDPlate.ON)
 			else:
 				self.lcd.backlight(Adafruit_CharLCDPlate.OFF)
-			self.message('Setting saved!')
 		else:
 			self.message('Backlight Setting:\n(On/Off)')
 			if choice == 0:
@@ -430,18 +543,22 @@ class Display():
 			else:
 				self.blink(4, 1)
 
-	def EventMethods_Setting_One(self):
-		self.SETTING_LIST[self.curSettingItem]['handle'](0)
+	def EventMethods_AutoRefresh(self, choice, excute = False):
+		if excute:
+			if choice == 0:
+				self.AUTO_REFRESH_PERIOD = 5
+			else:
+				self.AUTO_REFRESH_PERIOD = 1
+		else:
+			self.message('Auto refresh period:\n(Slow:5/Fast:1)')
+			if choice == 0:
+				self.blink(1, 1)
+			else:
+				self.blink(8, 1)
 
-	def EventMethods_Setting_Two(self):
-		self.SETTING_LIST[self.curSettingItem]['handle'](1)
-
-	def EventMethods_Setting_Excute_One(self):
-		self.SETTING_LIST[self.curSettingItem]['handle'](0, True)
-
-	def EventMethods_Setting_Excute_Two(self):
-		self.SETTING_LIST[self.curSettingItem]['handle'](1, True)
-
+	#==============================#
+	# ------------EXIT-------------#
+	#==============================#
 	def EventMethods_Exit_No(self):
 		self.message('Exit?\n(No/Yes)')
 		self.blink(1, 1)
