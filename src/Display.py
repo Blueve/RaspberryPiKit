@@ -1,6 +1,7 @@
 from time import sleep
 from Adafruit_CharLCDPlate import Adafruit_CharLCDPlate
 from Monitor import SysInfo
+from Weather import Weather
 import thread
 import commands
 
@@ -150,6 +151,7 @@ class Display():
 			2:'   ' + chr(0) + ' SELECT ' + chr(1) + '   \nTemperature',
 			3:'   ' + chr(0) + ' SELECT ' + chr(1) + '   \nDisk Info',
 			4:'   ' + chr(0) + ' SELECT ' + chr(1) + '   \nSystem Tools',
+			5:'   ' + chr(0) + ' SELECT ' + chr(1) + '   \nWeather',
 			98:'   ' + chr(0) + ' SELECT ' + chr(1) + '   \nSetting',
 			99:'   ' + chr(0) + ' SELECT     \nExit'}
 
@@ -220,7 +222,7 @@ class Display():
 		4:{
 			0:{
 				Adafruit_CharLCDPlate.LEFT  : (3, 0),
-				Adafruit_CharLCDPlate.RIGHT : (98, 0),
+				Adafruit_CharLCDPlate.RIGHT : (5, 0),
 				Adafruit_CharLCDPlate.SELECT: (4, 1)
 			},
 			# TOOL LIST
@@ -263,7 +265,19 @@ class Display():
 				Adafruit_CharLCDPlate.SELECT: (4, 1)
 			}
 		},
-		# MENU_5 SETTING
+		# MENU_5 WEATHER
+		5:{
+			0:{
+				Adafruit_CharLCDPlate.LEFT  : (4, 0),
+				Adafruit_CharLCDPlate.RIGHT : (98, 0),
+				Adafruit_CharLCDPlate.SELECT: (5, 1)
+			},
+			# DEFAULT
+			1:{
+				Adafruit_CharLCDPlate.LEFT: (5, 0)
+			}
+		},
+		# MENU_98 SETTING
 		98:{
 			0:{
 				Adafruit_CharLCDPlate.LEFT  : (4, 0),
@@ -310,7 +324,7 @@ class Display():
 				Adafruit_CharLCDPlate.SELECT: (98, 1)
 			}
 		},
-		# MENU_6 EXIT
+		# MENU_99 EXIT
 		99:{
 			0:{
 				Adafruit_CharLCDPlate.LEFT  : (98, 0),
@@ -353,6 +367,8 @@ class Display():
 			'EventMethods_4_5': self.EventMethods_Tools_Two,
 			'EventMethods_4_6': self.EventMethods_Tools_Excute_One,
 			'EventMethods_4_7': self.EventMethods_Tools_Excute_Two,
+
+			'EventMethods_5_1': self.EventMethods_Weather,
 
 			'EventMethods_98_1': self.EventMethods_Setting,
 			'EventMethods_98_2': self.EventMethods_Setting_Up,
@@ -610,6 +626,13 @@ class Display():
 				self.blink(1, 1)
 			else:
 				self.blink(4, 1)
+
+	#==============================#
+	# ----------WEATHER------------#
+	#==============================#
+	def EventMethods_Weather(self):
+		weatherInfo = Weather()
+		self.message('Beijing  ' + weatherInfo.getUpdateTime() + '\n  ' + str(weatherInfo.getTemperature()) + chr(4) + 'C   RH:' + weatherInfo.getRH())
 
 	#==============================#
 	# ----------SETTING------------#
