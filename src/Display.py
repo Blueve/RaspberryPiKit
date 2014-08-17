@@ -172,19 +172,40 @@ class Display():
 			1:{
 				Adafruit_CharLCDPlate.LEFT  : (5, 0),
 				Adafruit_CharLCDPlate.UP    : (5, 2),
-				Adafruit_CharLCDPlate.DOWN  : (5, 3)
+				Adafruit_CharLCDPlate.DOWN  : (5, 3),
+				Adafruit_CharLCDPlate.SELECT: (5, 4)
 			},
 			# SETTING LIST UP
 			2:{
 				Adafruit_CharLCDPlate.LEFT  : (5, 0),
 				Adafruit_CharLCDPlate.UP    : (5, 2),
-				Adafruit_CharLCDPlate.DOWN  : (5, 3)
+				Adafruit_CharLCDPlate.DOWN  : (5, 3),
+				Adafruit_CharLCDPlate.SELECT: (5, 4)
 			},
 			# SETTING LIST DOWN
 			3:{
 				Adafruit_CharLCDPlate.LEFT  : (5, 0),
 				Adafruit_CharLCDPlate.UP    : (5, 2),
-				Adafruit_CharLCDPlate.DOWN  : (5, 3)
+				Adafruit_CharLCDPlate.DOWN  : (5, 3),
+				Adafruit_CharLCDPlate.SELECT: (5, 4)
+			},
+			# SETTING DIALOG SELECT ONE
+			4:{
+				Adafruit_CharLCDPlate.SELECT: (5, 6),
+				Adafruit_CharLCDPlate.RIGHT : (5, 5)
+			},
+			# SETTING DIALOG SELECT TWO
+			5:{
+				Adafruit_CharLCDPlate.SELECT: (5, 7),
+				Adafruit_CharLCDPlate.LEFT  : (5, 4)
+			},
+			# SETTING DIALOG SELECT EXCUTE ONE
+			6:{
+				Adafruit_CharLCDPlate.SELECT: (5, 1)
+			},
+			# SETTING DIALOG SELECT EXCUTE TWO
+			7:{
+				Adafruit_CharLCDPlate.SELECT: (5, 1)
 			}
 		},
 		# MENU_6 EXIT
@@ -225,11 +246,21 @@ class Display():
 			'EventMethods_51': self.EventMethods_Setting,
 			'EventMethods_52': self.EventMethods_Setting_Up,
 			'EventMethods_53': self.EventMethods_Setting_Down,
+			'EventMethods_54': self.EventMethods_Setting_One,
+			'EventMethods_55': self.EventMethods_Setting_Two,
+			'EventMethods_56': self.EventMethods_Setting_Excute_One,
+			'EventMethods_57': self.EventMethods_Setting_Excute_Two,
 
 			'EventMethods_61': self.EventMethods_Exit_No,
 			'EventMethods_62': self.EventMethods_Exit_Yes,
 			'EventMethods_63': self.EventMethods_Exit
 		}
+		self.SETTING_NUM  = 3
+		self.SETTING_LIST = (
+			{'name':'Backlight', 'handle':self.EventMethods_Backlight },
+			{'name':'Auto Refresh', 'handle':self.EventMethods_Backlight },
+			{'name':'Weather Report', 'handle':self.EventMethods_Backlight }
+		)
 		# Init LCD
 		self.lcd = Adafruit_CharLCDPlate()
 		self.lcd.begin(16, 2)
@@ -317,7 +348,7 @@ class Display():
 
 	def EventMethods_SystemInfo(self):
 		self.AutoRefreshMethod = 'EventMethods_01'
-		self.message('CPU Used: ' + str(SysInfo.getCpuInfo()['used']) + '%\nMEM FREE: ' + str(SysInfo.getMemInfo()['free']/1024) + 'MB')
+		self.message('CPU Used: ' + str(SysInfo.getCpuInfo()['used']) + '%\nMEM Free: ' + str(SysInfo.getMemInfo()['free']/1024) + 'MB')
 
 	def showNetworkInfo(self, networkInfo):
 		if len(networkInfo) > 0:
@@ -352,18 +383,17 @@ class Display():
 			line_2 = line_2 + chr(6)
 		self.message('Disk used: ' + str(SysInfo.getDiskInfo()['used']) + 'GB\n' + line_2 + ' ' + str(SysInfo.getDiskInfo()['use%']) + '%')
 
-	SETTING_NUM  = 3
-	SETTING_LIST = ('Backlight', 'Auto Refresh', 'Weather Report')
-	SETTING_CURSOR = (())
+	#==============================#
+	# ----------SETTING------------#
+	#==============================#
 	def showSettingList(self):
-		line_1 = chr(2) + self.SETTING_LIST[self.curSettingItem]
-		line_2 = chr(3) + self.SETTING_LIST[(self.curSettingItem + 1) % self.SETTING_NUM]
+		line_1 = chr(2) + self.SETTING_LIST[self.curSettingItem]['name']
+		line_2 = chr(3) + self.SETTING_LIST[(self.curSettingItem + 1) % self.SETTING_NUM]['name']
 		self.message(line_1 + '\n' + line_2)
 		if self.curSettingCursor == 0:
 			self.blink(1, 0)
 		else:
 			self.blink(1, 1)
-
 
 	def EventMethods_Setting(self):
 		self.curSettingItem = 0
@@ -385,6 +415,32 @@ class Display():
 			self.curSettingCursor = 0
 			self.curSettingItem = (self.curSettingItem + 2) % self.SETTING_NUM
 		self.showSettingList()
+
+	def EventMethods_Backlight(self, choice, excute = False):
+		if excute:
+			if choice == 0:
+				self.lcd.backlight(Adafruit_CharLCDPlate.ON)
+			else:
+				self.lcd.backlight(Adafruit_CharLCDPlate.OFF)
+			self.message('Setting saved!')
+		else:
+			self.message('Backlight Setting:\n(On/Off)')
+			if choice == 0:
+				self.blink(1, 1)
+			else:
+				self.blink(4, 1)
+
+	def EventMethods_Setting_One(self):
+		self.SETTING_LIST[self.curSettingItem]['handle'](0)
+
+	def EventMethods_Setting_Two(self):
+		self.SETTING_LIST[self.curSettingItem]['handle'](1)
+
+	def EventMethods_Setting_Excute_One(self):
+		self.SETTING_LIST[self.curSettingItem]['handle'](0, True)
+
+	def EventMethods_Setting_Excute_Two(self):
+		self.SETTING_LIST[self.curSettingItem]['handle'](1, True)
 
 	def EventMethods_Exit_No(self):
 		self.message('Exit?\n(No/Yes)')
