@@ -2,6 +2,7 @@ from time import sleep
 from Adafruit_CharLCDPlate import Adafruit_CharLCDPlate
 from Monitor import SysInfo
 import thread
+import commands
 
 class Display():
 
@@ -144,13 +145,13 @@ class Display():
 			  Adafruit_CharLCDPlate.DOWN:'DOWN',
 			  Adafruit_CharLCDPlate.SELECT:'SELECT'}
 
-	MENU = ('     SELECT ' + chr(1) + '   \nSystem Info',
-			'   ' + chr(0) + ' SELECT ' + chr(1) + '   \nNetwork Info',
-			'   ' + chr(0) + ' SELECT ' + chr(1) + '   \nTemperature',
-			'   ' + chr(0) + ' SELECT ' + chr(1) + '   \nDisk Info',
-			'   ' + chr(0) + ' SELECT ' + chr(1) + '   \nSystem Tools',
-			'   ' + chr(0) + ' SELECT ' + chr(1) + '   \nSetting',
-			'   ' + chr(0) + ' SELECT     \nExit')
+	MENU = {0:'     SELECT ' + chr(1) + '   \nSystem Info',
+			1:'   ' + chr(0) + ' SELECT ' + chr(1) + '   \nNetwork Info',
+			2:'   ' + chr(0) + ' SELECT ' + chr(1) + '   \nTemperature',
+			3:'   ' + chr(0) + ' SELECT ' + chr(1) + '   \nDisk Info',
+			4:'   ' + chr(0) + ' SELECT ' + chr(1) + '   \nSystem Tools',
+			98:'   ' + chr(0) + ' SELECT ' + chr(1) + '   \nSetting',
+			99:'   ' + chr(0) + ' SELECT     \nExit'}
 
 	# State transition table
 	STT = {
@@ -219,76 +220,111 @@ class Display():
 		4:{
 			0:{
 				Adafruit_CharLCDPlate.LEFT  : (3, 0),
-				Adafruit_CharLCDPlate.RIGHT : (5, 0),
+				Adafruit_CharLCDPlate.RIGHT : (98, 0),
 				Adafruit_CharLCDPlate.SELECT: (4, 1)
 			},
-			# DEFAULT
+			# TOOL LIST
 			1:{
-				Adafruit_CharLCDPlate.LEFT: (4, 0)
+				Adafruit_CharLCDPlate.LEFT  : (4, 0),
+				Adafruit_CharLCDPlate.UP    : (4, 2),
+				Adafruit_CharLCDPlate.DOWN  : (4, 3),
+				Adafruit_CharLCDPlate.SELECT: (4, 4)
+			},
+			# TOOL LIST UP
+			2:{
+				Adafruit_CharLCDPlate.LEFT  : (4, 0),
+				Adafruit_CharLCDPlate.UP    : (4, 2),
+				Adafruit_CharLCDPlate.DOWN  : (4, 3),
+				Adafruit_CharLCDPlate.SELECT: (4, 4)
+			},
+			# TOOL LIST DOWN
+			3:{
+				Adafruit_CharLCDPlate.LEFT  : (4, 0),
+				Adafruit_CharLCDPlate.UP    : (4, 2),
+				Adafruit_CharLCDPlate.DOWN  : (4, 3),
+				Adafruit_CharLCDPlate.SELECT: (4, 4)
+			},
+			# TOOL DIALOG SELECT ONE
+			4:{
+				Adafruit_CharLCDPlate.SELECT: (4, 6),
+				Adafruit_CharLCDPlate.RIGHT : (4, 5)
+			},
+			# TOOL DIALOG SELECT TWO
+			5:{
+				Adafruit_CharLCDPlate.SELECT: (4, 7),
+				Adafruit_CharLCDPlate.LEFT  : (4, 4)
+			},
+			# TOOL DIALOG SELECT EXCUTE ONE
+			6:{
+				Adafruit_CharLCDPlate.SELECT: (4, 1)
+			},
+			# TOOL DIALOG SELECT EXCUTE TWO
+			7:{
+				Adafruit_CharLCDPlate.SELECT: (4, 1)
 			}
 		},
 		# MENU_5 SETTING
-		5:{
+		98:{
 			0:{
 				Adafruit_CharLCDPlate.LEFT  : (4, 0),
-				Adafruit_CharLCDPlate.RIGHT : (6, 0),
-				Adafruit_CharLCDPlate.SELECT: (5, 1)
+				Adafruit_CharLCDPlate.RIGHT : (99, 0),
+				Adafruit_CharLCDPlate.SELECT: (98, 1)
 			},
 			# SETTING LIST
 			1:{
-				Adafruit_CharLCDPlate.LEFT  : (5, 0),
-				Adafruit_CharLCDPlate.UP    : (5, 2),
-				Adafruit_CharLCDPlate.DOWN  : (5, 3),
-				Adafruit_CharLCDPlate.SELECT: (5, 4)
+				Adafruit_CharLCDPlate.LEFT  : (98, 0),
+				Adafruit_CharLCDPlate.UP    : (98, 2),
+				Adafruit_CharLCDPlate.DOWN  : (98, 3),
+				Adafruit_CharLCDPlate.SELECT: (98, 4)
 			},
 			# SETTING LIST UP
 			2:{
-				Adafruit_CharLCDPlate.LEFT  : (5, 0),
-				Adafruit_CharLCDPlate.UP    : (5, 2),
-				Adafruit_CharLCDPlate.DOWN  : (5, 3),
-				Adafruit_CharLCDPlate.SELECT: (5, 4)
+				Adafruit_CharLCDPlate.LEFT  : (98, 0),
+				Adafruit_CharLCDPlate.UP    : (98, 2),
+				Adafruit_CharLCDPlate.DOWN  : (98, 3),
+				Adafruit_CharLCDPlate.SELECT: (98, 4)
 			},
 			# SETTING LIST DOWN
 			3:{
-				Adafruit_CharLCDPlate.LEFT  : (5, 0),
-				Adafruit_CharLCDPlate.UP    : (5, 2),
-				Adafruit_CharLCDPlate.DOWN  : (5, 3),
-				Adafruit_CharLCDPlate.SELECT: (5, 4)
+				Adafruit_CharLCDPlate.LEFT  : (98, 0),
+				Adafruit_CharLCDPlate.UP    : (98, 2),
+				Adafruit_CharLCDPlate.DOWN  : (98, 3),
+				Adafruit_CharLCDPlate.SELECT: (98, 4)
 			},
 			# SETTING DIALOG SELECT ONE
 			4:{
-				Adafruit_CharLCDPlate.SELECT: (5, 6),
-				Adafruit_CharLCDPlate.RIGHT : (5, 5)
+				Adafruit_CharLCDPlate.SELECT: (98, 6),
+				Adafruit_CharLCDPlate.RIGHT : (98, 5)
 			},
 			# SETTING DIALOG SELECT TWO
 			5:{
-				Adafruit_CharLCDPlate.SELECT: (5, 7),
-				Adafruit_CharLCDPlate.LEFT  : (5, 4)
+				Adafruit_CharLCDPlate.SELECT: (98, 7),
+				Adafruit_CharLCDPlate.LEFT  : (98, 4)
 			},
 			# SETTING DIALOG SELECT EXCUTE ONE
 			6:{
-				Adafruit_CharLCDPlate.SELECT: (5, 1)
+				Adafruit_CharLCDPlate.SELECT: (98, 1)
 			},
 			# SETTING DIALOG SELECT EXCUTE TWO
 			7:{
-				Adafruit_CharLCDPlate.SELECT: (5, 1)
+				Adafruit_CharLCDPlate.SELECT: (98, 1)
 			}
 		},
 		# MENU_6 EXIT
-		6:{
+		99:{
 			0:{
-				Adafruit_CharLCDPlate.LEFT  : (5, 0),
-				Adafruit_CharLCDPlate.SELECT: (6, 1)
+				Adafruit_CharLCDPlate.LEFT  : (98, 0),
+				Adafruit_CharLCDPlate.SELECT: (99, 1)
 			},
 			# NO
 			1:{
-				Adafruit_CharLCDPlate.SELECT: (6, 0),
-				Adafruit_CharLCDPlate.RIGHT : (6, 2)
+				Adafruit_CharLCDPlate.SELECT: (99, 0),
+				Adafruit_CharLCDPlate.RIGHT : (99, 2)
 			},
 			# YES
 			2:{
-				Adafruit_CharLCDPlate.SELECT: (6, 3),
-				Adafruit_CharLCDPlate.LEFT  : (6, 1)
+				Adafruit_CharLCDPlate.SELECT: (99, 3),
+				Adafruit_CharLCDPlate.LEFT  : (99, 1)
 			},
 			# EXIT
 			3:{
@@ -300,28 +336,41 @@ class Display():
 		# Init EventMethods
 		self.AUTO_REFRESH_PERIOD = 5
 		self.EventMethods = {
-			'EventMethods_01': self.EventMethods_SystemInfo,
+			'EventMethods_0_1': self.EventMethods_SystemInfo,
 
-			'EventMethods_11': self.EventMethods_NetworkInfo,
-			'EventMethods_12': self.EventMethods_NetworkInfo_Up,
-			'EventMethods_13': self.EventMethods_NetworkInfo_Down,
+			'EventMethods_1_1': self.EventMethods_NetworkInfo,
+			'EventMethods_1_2': self.EventMethods_NetworkInfo_Up,
+			'EventMethods_1_3': self.EventMethods_NetworkInfo_Down,
 
-			'EventMethods_21': self.EventMethods_Temperature,
+			'EventMethods_2_1': self.EventMethods_Temperature,
 
-			'EventMethods_31': self.EventMethods_DiskInfo,
+			'EventMethods_3_1': self.EventMethods_DiskInfo,
 
-			'EventMethods_51': self.EventMethods_Setting,
-			'EventMethods_52': self.EventMethods_Setting_Up,
-			'EventMethods_53': self.EventMethods_Setting_Down,
-			'EventMethods_54': self.EventMethods_Setting_One,
-			'EventMethods_55': self.EventMethods_Setting_Two,
-			'EventMethods_56': self.EventMethods_Setting_Excute_One,
-			'EventMethods_57': self.EventMethods_Setting_Excute_Two,
+			'EventMethods_4_1': self.EventMethods_Tools,
+			'EventMethods_4_2': self.EventMethods_Tools_Up,
+			'EventMethods_4_3': self.EventMethods_Tools_Down,
+			'EventMethods_4_4': self.EventMethods_Tools_One,
+			'EventMethods_4_5': self.EventMethods_Tools_Two,
+			'EventMethods_4_6': self.EventMethods_Tools_Excute_One,
+			'EventMethods_4_7': self.EventMethods_Tools_Excute_Two,
 
-			'EventMethods_61': self.EventMethods_Exit_No,
-			'EventMethods_62': self.EventMethods_Exit_Yes,
-			'EventMethods_63': self.EventMethods_Exit
+			'EventMethods_98_1': self.EventMethods_Setting,
+			'EventMethods_98_2': self.EventMethods_Setting_Up,
+			'EventMethods_98_3': self.EventMethods_Setting_Down,
+			'EventMethods_98_4': self.EventMethods_Setting_One,
+			'EventMethods_98_5': self.EventMethods_Setting_Two,
+			'EventMethods_98_6': self.EventMethods_Setting_Excute_One,
+			'EventMethods_98_7': self.EventMethods_Setting_Excute_Two,
+
+			'EventMethods_99_1': self.EventMethods_Exit_No,
+			'EventMethods_99_2': self.EventMethods_Exit_Yes,
+			'EventMethods_99_3': self.EventMethods_Exit
 		}
+		self.TOOLS_NUM  = 2
+		self.TOOLS_LIST = (
+			{'name':'Reboot', 'handle':self.EventMethods_Reboot },
+			{'name':'Power Off', 'handle':self.EventMethods_PowerOff }
+		)
 		self.SETTING_NUM  = 3
 		self.SETTING_LIST = (
 			{'name':'Backlight', 'handle':self.EventMethods_Backlight },
@@ -382,7 +431,7 @@ class Display():
 			self.message(self.MENU[self.curMenu])
 		else:
 			try:
-				self.EventMethods['EventMethods_' + str(self.curMenu) + str(self.curPage)]()
+				self.EventMethods['EventMethods_' + str(self.curMenu) + '_' + str(self.curPage)]()
 			except Exception, e:
 				if(self.debug):
 					self.lcd.message(str(e))
@@ -423,7 +472,7 @@ class Display():
 	# --------SYSTEM INFO----------#
 	#==============================#
 	def EventMethods_SystemInfo(self):
-		self.AutoRefreshMethod = 'EventMethods_01'
+		self.AutoRefreshMethod = 'EventMethods_0_1'
 		self.message('CPU Used: ' + str(SysInfo.getCpuInfo()['used']) + '%\nMEM Free: ' + str(SysInfo.getMemInfo()['free']/1024) + 'MB')
 	
 	#==============================#
@@ -467,7 +516,7 @@ class Display():
 		line_2 = 'L-' + chr(4) + chr(3) + chr(3) + chr(3) + chr(2) + chr(2) + chr(2) + chr(2) + chr(1) + chr(1) + chr(1) + chr(5) + '-H'
 		self.message('CPU: ' + str(cpuTemperature) + chr(6) + 'C\n' + line_2)
 		self.blink(cursor, 1)
-		self.AutoRefreshMethod = 'EventMethods_21'
+		self.AutoRefreshMethod = 'EventMethods_2_1'
 		if(self.debug):
 			print 'Temperature bar: ' + str(cursor)
 
@@ -482,6 +531,85 @@ class Display():
 		for i in range(0, 10 - blackGridNum):
 			line_2 = line_2 + chr(6)
 		self.message('Disk used: ' + str(SysInfo.getDiskInfo()['used']) + 'GB\n' + line_2 + ' ' + str(SysInfo.getDiskInfo()['use%']) + '%')
+
+	#==============================#
+	# --------SYSTEM TOOLS---------#
+	#==============================#
+	def showToolsList(self):
+		line_1 = chr(2) + self.TOOLS_LIST[self.curToolsItem]['name']
+		line_2 = chr(3) + self.TOOLS_LIST[(self.curToolsItem + 1) % self.TOOLS_NUM]['name']
+		self.message(line_1 + '\n' + line_2)
+		if self.curToolsCursor == 0:
+			self.blink(1, 0)
+		else:
+			self.blink(1, 1)
+
+	def EventMethods_Tools(self):
+		self.curToolsItem = 0
+		self.curToolsCursor = 0
+		self.showToolsList()
+
+	def EventMethods_Tools_Up(self):
+		if self.curToolsCursor == 0:
+			self.curToolsCursor = 1
+			self.curToolsItem = (self.curToolsItem - 2) % self.TOOLS_NUM
+		else:
+			self.curToolsCursor = 0
+		self.showToolsList()
+
+	def EventMethods_Tools_Down(self):
+		if self.curToolsCursor == 0:
+			self.curToolsCursor = 1
+		else:
+			self.curToolsCursor = 0
+			self.curToolsItem = (self.curToolsItem + 2) % self.TOOLS_NUM
+		self.showToolsList()
+
+	def EventMethods_Tools_One(self):
+		self.TOOLS_LIST[(self.curToolsItem + self.curToolsCursor) % self.TOOLS_NUM]['handle'](0)
+
+	def EventMethods_Tools_Two(self):
+		self.TOOLS_LIST[(self.curToolsItem + self.curToolsCursor) % self.TOOLS_NUM]['handle'](1)
+
+	def EventMethods_Tools_Excute_One(self):
+		self.TOOLS_LIST[self.curToolsItem]['handle'](0, True)
+
+	def EventMethods_Tools_Excute_Two(self):
+		self.TOOLS_LIST[self.curToolsItem]['handle'](1, True)
+
+	def EventMethods_Reboot(self, choice, excute = False):
+		if excute:
+			if choice == 0:
+				self.message('Canceled!')
+			else:
+				for i in range(0, 5):
+					self.message('Reboot\nAfter ' + str(5 - i) + ' Sec' + (i % 3 + 1) * '.')
+					sleep(1)
+				self.exit()
+				commands.getoutput('sudo reboot')
+		else:
+			self.message('Reboot now?\n(No/Yes)')
+			if choice == 0:
+				self.blink(1, 1)
+			else:
+				self.blink(4, 1)
+
+	def EventMethods_PowerOff(self, choice, excute = False):
+		if excute:
+			if choice == 0:
+				self.message('Canceled!')
+			else:
+				for i in range(0, 5):
+					self.message('Power Off\nAfter ' + str(5 - i) + ' Sec' + (i % 3 + 1) * '.')
+					sleep(1)
+				self.exit()
+				commands.getoutput('sudo poweroff')
+		else:
+			self.message('Power off now?\n(No/Yes)')
+			if choice == 0:
+				self.blink(1, 1)
+			else:
+				self.blink(4, 1)
 
 	#==============================#
 	# ----------SETTING------------#
