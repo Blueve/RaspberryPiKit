@@ -518,7 +518,6 @@ class Display():
 	# --------TEMPERATURE----------#
 	#==============================#
 	def EventMethods_Temperature(self):
-		self.AutoRefreshMethod = 'EventMethods_21'
 		cpuTemperature = SysInfo.getCpuTemperature()
 		cursor = int(cpuTemperature * 10)
 		if cursor <= 350:
@@ -633,6 +632,7 @@ class Display():
 	def EventMethods_Weather(self):
 		weatherInfo = Weather()
 		self.message('Beijing  ' + weatherInfo.getUpdateTime() + '\n  ' + str(weatherInfo.getTemperature()) + chr(4) + 'C   RH:' + weatherInfo.getRH())
+		self.AutoRefreshMethod = 'EventMethods_5_1'
 
 	#==============================#
 	# ----------SETTING------------#
