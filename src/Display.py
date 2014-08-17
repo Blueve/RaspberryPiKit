@@ -651,11 +651,11 @@ class Display():
 		self.SETTING_LIST[(self.curSettingItem + self.curSettingCursor) % self.SETTING_NUM]['handle'](1)
 
 	def EventMethods_Setting_Excute_One(self):
-		self.SETTING_LIST[self.curSettingItem]['handle'](0, True)
+		self.SETTING_LIST[(self.curSettingItem + self.curSettingCursor) % self.SETTING_NUM]['handle'](0, True)
 		self.message('Setting saved!')
 
 	def EventMethods_Setting_Excute_Two(self):
-		self.SETTING_LIST[self.curSettingItem]['handle'](1, True)
+		self.SETTING_LIST[(self.curSettingItem + self.curSettingCursor) % self.SETTING_NUM]['handle'](1, True)
 		self.message('Setting saved!')
 
 	def EventMethods_Backlight(self, choice, excute = False):
@@ -678,7 +678,7 @@ class Display():
 			else:
 				self.AUTO_REFRESH_PERIOD = 1
 		else:
-			self.message('Auto refresh period:\n(Slow:5/Fast:1)')
+			self.message('Set period:\n(Slow:5/Fast:1)')
 			if choice == 0:
 				self.blink(1, 1)
 			else:
