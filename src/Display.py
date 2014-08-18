@@ -587,10 +587,10 @@ class Display():
 		self.TOOLS_LIST[(self.curToolsItem + self.curToolsCursor) % self.TOOLS_NUM]['handle'](1)
 
 	def EventMethods_Tools_Excute_One(self):
-		self.TOOLS_LIST[self.curToolsItem]['handle'](0, True)
+		self.TOOLS_LIST[self.curToolsItem + self.curToolsCursor) % self.TOOLS_NUM]['handle'](0, True)
 
 	def EventMethods_Tools_Excute_Two(self):
-		self.TOOLS_LIST[self.curToolsItem]['handle'](1, True)
+		self.TOOLS_LIST[self.curToolsItem + self.curToolsCursor) % self.TOOLS_NUM]['handle'](1, True)
 
 	def EventMethods_Reboot(self, choice, excute = False):
 		if excute:
