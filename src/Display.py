@@ -109,20 +109,20 @@ class Display():
 				 0b10010,
 				 0b11111],
 				[0b00111, # 4 Left
-				 0b01001,
-				 0b10100,
-				 0b10010,
-				 0b11001,
-				 0b10100,
-				 0b01010,
+				 0b01000,
+				 0b10000,
+				 0b10000,
+				 0b10000,
+				 0b10000,
+				 0b01000,
 				 0b00111],
 				[0b11100, # 5 Right
-				 0b01110,
-				 0b10111,
-				 0b11011,
-				 0b01101,
-				 0b10111,
-				 0b11010,
+				 0b11110,
+				 0b11111,
+				 0b11111,
+				 0b11111,
+				 0b11111,
+				 0b11110,
 				 0b11100],
 				[0b00110, # 6 Degree
 				 0b01001,
@@ -422,7 +422,11 @@ class Display():
 			print 'Auto refresh thread started!'
 		while True:
 			if self.AutoRefreshMethod != None:
-				self.EventMethods[self.AutoRefreshMethod]()
+				try:
+					self.EventMethods[self.AutoRefreshMethod]()
+				except Exception, e:
+					if(self.debug):
+						print str(e)
 				if(self.debug):
 					print self.AutoRefreshMethod, ' fired!'
 			sleep(self.AUTO_REFRESH_PERIOD)
@@ -520,17 +524,18 @@ class Display():
 	def EventMethods_Temperature(self):
 		cpuTemperature = SysInfo.getCpuTemperature()
 		cursor = int(cpuTemperature * 10)
-		if cursor <= 350:
+		if cursor <= 300:
 			cursor = 2
 		elif cursor >= 500:
 			cursor = 13
 		else:
-			cursor = int((cursor - 350) * 12 / 150) + 2
+			cursor = int((cursor - 300) * 12 / 200) + 2
 		# Use private charset
 		self.loadCharset('TemperatureExtend')
 		line_2 = 'L-' + chr(4) + chr(3) + chr(3) + chr(3) + chr(2) + chr(2) + chr(2) + chr(2) + chr(1) + chr(1) + chr(1) + chr(5) + '-H'
 		self.message('CPU: ' + str(cpuTemperature) + chr(6) + 'C\n' + line_2)
 		self.blink(cursor, 1)
+		self.lcd.noCursor()
 		self.AutoRefreshMethod = 'EventMethods_2_1'
 		if(self.debug):
 			print 'Temperature bar: ' + str(cursor)
@@ -587,10 +592,10 @@ class Display():
 		self.TOOLS_LIST[(self.curToolsItem + self.curToolsCursor) % self.TOOLS_NUM]['handle'](1)
 
 	def EventMethods_Tools_Excute_One(self):
-		self.TOOLS_LIST[self.curToolsItem + self.curToolsCursor) % self.TOOLS_NUM]['handle'](0, True)
+		self.TOOLS_LIST[(self.curToolsItem + self.curToolsCursor) % self.TOOLS_NUM]['handle'](0, True)
 
 	def EventMethods_Tools_Excute_Two(self):
-		self.TOOLS_LIST[self.curToolsItem + self.curToolsCursor) % self.TOOLS_NUM]['handle'](1, True)
+		self.TOOLS_LIST[(self.curToolsItem + self.curToolsCursor) % self.TOOLS_NUM]['handle'](1, True)
 
 	def EventMethods_Reboot(self, choice, excute = False):
 		if excute:
